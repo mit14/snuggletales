@@ -6,6 +6,7 @@ from email.message import EmailMessage
 from app.models import ResetPasswordOTP
 import random
 import string
+from .config import settings
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -14,7 +15,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def send_email(to_email: str, subject: str, body: str):
     message = EmailMessage()
-    message["From"] = "kmpinnovations@outlook.com"
+    message["From"] = settings.email_otp
     message["To"] = to_email
     message["Subject"] = subject
     message.set_content(body)
@@ -23,8 +24,8 @@ async def send_email(to_email: str, subject: str, body: str):
         message,
         hostname="smtp-mail.outlook.com",
         port=587,
-        username="kmpinnovations@outlook.com",
-        password="Khiara@15072022",
+        username=settings.email_otp,
+        password=settings.email_password,
         start_tls=True,
     )
 
