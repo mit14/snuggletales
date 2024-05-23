@@ -63,3 +63,11 @@ class AdminStroyOut(BaseModel):
     description: str
     title_image_path: str
 
+class AdminPageOut(BaseModel):
+    page_id: int
+    story_id: int
+    page_number: int
+    content: str
+    image_path: str
+    
+    
