@@ -134,6 +134,10 @@ def login_user(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Sess
     if not user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid Credentials')
     
+    if user.is_verified == False:
+        raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED , detail= "User not verified, please verify.")
+
+    
     if not utils.verify_password(user_credentials.password, user.password):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid Credentials')
     
