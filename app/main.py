@@ -8,7 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine) // deactivated because using alembic 
 
 app = FastAPI()
 

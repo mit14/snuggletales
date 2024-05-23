@@ -19,11 +19,12 @@ class User(Base):
     is_verified = Column(Boolean, default=False, nullable= False)
     otps = relationship('ResetPasswordOTP', back_populates= "user")
 
+
 class ResetPasswordOTP(Base):
     __tablename__ = "reset_password_otp"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable= False)
+    user_id = Column(Integer, ForeignKey('users.id', ondelete= "CASCADE") , nullable= False)
     expires_at = Column(DateTime, nullable=False)
     otp = Column(String(6), nullable=False)
     user = relationship('User', back_populates="otps")
