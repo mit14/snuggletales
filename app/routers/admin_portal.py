@@ -134,7 +134,33 @@ def delete_story(story_id: int, db: Session = Depends(database.get_db), current_
     story_query.delete()
     db.commit()
 
-    return Response(status_code= status.HTTP_204_NO_CONTENT, detail= " Story Deleted")
+    return Response(status_code= status.HTTP_204_NO_CONTENT)
+
+
+
+
+#######################################################  Delete Page  ##################################################################################################
+
+
+@router.delete('/{story_id}/{page_number}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_page(story_id: int,page_number: int, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
+    
+    page_query = db.query(models.Pages).filter(models.Pages.story_id == story_id, models.Pages.page_number == page_number)
+    page = page_query.first()
+
+
+    if page == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Page with the id: {page_number} was not found.')
+
+    page_query.delete()
+    db.commit()
+
+    return Response(status_code= status.HTTP_204_NO_CONTENT)
+
+
 
 
 ##################################################  Edit/Update Story  ##################################################################################################
@@ -152,7 +178,29 @@ def update_story(story_id: int, updated_story: schemas.CreateStory , db: Session
     if story == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Story with the id: {story_id} was not found.')
 
-    story_query.update(update_story.dict(), synchronize_session=False)
+    story_query.update(updated_story.dict(), synchronize_session=False)
     db.commit()
 
     return {"detail": "Story has been updated."}
+
+
+##################################################  Edit/Update Story  ##################################################################################################
+
+
+@router.put("/{story_id}/{page_number}")
+def update_page(story_id: int, page_number: int, updated_page: schemas.CreatePage, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
+    
+    page_query = db.query(models.Pages).filter(models.Pages.story_id == story_id, models.Pages.page_number == page_number)
+    page = page_query.first()
+
+
+    if page == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Page with the id: {page_number} was not found.')
+    
+    page_query.update(updated_page.dict(), synchronize_session=False)
+    db.commit()
+
+    return {"detail": "Page has been updated"}
