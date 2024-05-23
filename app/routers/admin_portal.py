@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import  status, HTTPException, Depends, APIRouter
+from fastapi import  Response, status, HTTPException, Depends, APIRouter
 from fastapi import BackgroundTasks
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -10,13 +10,13 @@ from app import database, utils, schemas, models, oauth2
 
 
 router = APIRouter(prefix= "/admin/dev/api",
-                   tags= ["Create Stories and Pages"]
+                   tags= ["Create Stories and Pages"] 
                    )
 
 
 
 
-############################################  LOGIN  ##################################################################################################
+###############################################################  LOGIN  ##################################################################################################
 
 
 
@@ -39,7 +39,8 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
 
 
 
-############################################  Create Story  ##################################################################################################
+########################################################  Create Story  ##################################################################################################
+
 
 @router.post("/story")
 def create_story(story: schemas.CreateStory, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user) ):
@@ -56,7 +57,24 @@ def create_story(story: schemas.CreateStory, db: Session = Depends(database.get_
     return {"detail": "Story added successfully"}
 
 
-############################################  Create Page  ##################################################################################################
+
+#####################################################  Get All Stories  ##################################################################################################
+
+
+@router.get("/story", response_model=List[schemas.AdminStroyOut])
+def get_all_stories(db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
+    
+    stories = db.query(models.Story).all()
+
+    return stories
+
+
+
+#########################################################  Create Page  ##################################################################################################
+
 
 @router.post("/{story_id}/page")
 def create_page(story_id: int, page: schemas.CreatePage, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user) ):
@@ -70,6 +88,11 @@ def create_page(story_id: int, page: schemas.CreatePage, db: Session = Depends(d
     if story == None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Story with the id: {story_id} was not found.')
     
+    existing_page = db.query(models.Pages).filter(models.Pages.story_id == story_id, models.Pages.page_number == page.page_number).first()
+    
+    if existing_page:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Page number {page.page_number} already exists for story with id: {story_id}.")
+    
     new_page = models.Pages(story_id= story_id, **page.model_dump())
     db.add(new_page)
     db.commit()
@@ -78,15 +101,58 @@ def create_page(story_id: int, page: schemas.CreatePage, db: Session = Depends(d
     return {"detail": "Page added successfully"}
 
 
-############################################  Get All Stories  ##################################################################################################
+################################################  Get Pages of a Story  ##################################################################################################
 
-@router.get("/story", response_model=List[schemas.AdminStroyOut])
-def get_all_stories(db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+@router.get("/{story_id}/page", response_model=List[schemas.AdminPageOut])
+def get_pages(story_id: int, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
     
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
     
-    stories = db.query(models.Story).all()
+    pages = db.query(models.Pages).filter(models.Pages.story_id == story_id).all()
 
-    return stories
+    return pages
 
+
+#######################################################  Delete Story  ##################################################################################################
+
+
+@router.delete('/{story_id}', status_code=status.HTTP_204_NO_CONTENT)
+def delete_story(story_id: int, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
+    
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
+    
+    story_query = db.query(models.Story).filter(models.Story.story_id == story_id)
+    story = story_query.first()
+
+
+    if story == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Story with the id: {story_id} was not found.')
+
+    story_query.delete()
+    db.commit()
+
+    return Response(status_code= status.HTTP_204_NO_CONTENT, detail= " Story Deleted")
+
+
+##################################################  Edit/Update Story  ##################################################################################################
+
+@router.put("/{story_id}")
+def update_story(story_id: int, updated_story: schemas.CreateStory , db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user) ):
+
+    if current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
+    
+    story_query = db.query(models.Story).filter(models.Story.story_id == story_id)
+    story = story_query.first()
+
+
+    if story == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'Story with the id: {story_id} was not found.')
+
+    story_query.update(update_story.dict(), synchronize_session=False)
+    db.commit()
+
+    return {"detail": "Story has been updated."}
