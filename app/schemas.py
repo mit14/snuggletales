@@ -45,3 +45,8 @@ class TokenData(BaseModel):
 class GoogleToken(BaseModel):
     token: str
 
+class CreateStory(BaseModel):
+    title: str
+    description: str
+    title_image_path: Optional[str]
+    

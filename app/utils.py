@@ -1,9 +1,11 @@
+from fastapi import Depends, HTTPException, status
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone
 from sqlalchemy.orm import Session
 from aiosmtplib import send
 from email.message import EmailMessage
-from app.models import ResetPasswordOTP
+from app.models import ResetPasswordOTP, User
+from app.oauth2 import get_current_user
 import random
 import string
 from .config import settings
@@ -65,3 +67,14 @@ def hash(password: str):
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
+
+########################################  Verify Admin ###########################################
+
+# def admin_required(current_user: User = Depends(get_current_user)):
+#     if current_user.role != 'admin':
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Insufficient privileges",
+#         )
+#     return current_user

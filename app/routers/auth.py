@@ -27,7 +27,16 @@ async def signup(user: schemas.UserCreate, background_tasks: BackgroundTasks,db:
     hash_password = utils.hash(user.password)
     user.password = hash_password
 
-    new_user = models.User(**user.model_dump())
+    # new_user = models.User(**user.model_dump())  /// old method for unpacking the input, new method to diff. admin user 
+
+
+    new_user = models.User(
+        email = user.email,
+        password = hash_password,
+        age = user.age,
+        # role = "user"
+    )
+    
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
