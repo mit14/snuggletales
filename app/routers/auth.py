@@ -8,7 +8,7 @@ from app import database, utils, schemas, models, oauth2
 
 
 
-router = APIRouter(prefix= "/dev",
+router = APIRouter(prefix= "/api/dev/v1/user",
                    tags= ["Registration and Authentication"]
                    )
 
@@ -17,8 +17,8 @@ router = APIRouter(prefix= "/dev",
 ##########################################  REGISTRATION  #################################################################################################
 
 
-@router.post("/register", response_model=schemas.UserOut)
-async def signup(user: schemas.UserCreate, background_tasks: BackgroundTasks,db: Session = Depends(database.get_db)):
+@router.post("/register", status_code=status.HTTP_201_CREATED ,response_model=schemas.UserOut)
+async def create_user(user: schemas.UserCreate, background_tasks: BackgroundTasks,db: Session = Depends(database.get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
     if db_user:
@@ -47,9 +47,11 @@ async def signup(user: schemas.UserCreate, background_tasks: BackgroundTasks,db:
     return new_user
 
 
-@router.post("/verify-user", response_model= schemas.Token)
-def validate_registration(otp_validation: schemas.OTPValidation, db: Session = Depends(database.get_db)):
+@router.post("/verify", status_code=status.HTTP_202_ACCEPTED ,response_model= schemas.Token)
+def verify_user(otp_validation: schemas.OTPValidation, db: Session = Depends(database.get_db)):
+
     user = db.query(models.User).filter(models.User.email == otp_validation.email).first()
+    
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
@@ -72,8 +74,8 @@ def validate_registration(otp_validation: schemas.OTPValidation, db: Session = D
 #########################################  FORGOT PASSWORD  ##################################################################################################
 
 
-@router.post("/password-reset-otp")
-def request_password_reset(password_reset_request: schemas.PasswordResetRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
+@router.post("/forgot_password_otp", status_code=status.HTTP_201_CREATED)
+def forgot_password_otp(password_reset_request: schemas.PasswordResetRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == password_reset_request.email).first()
     
     if not user:
@@ -85,7 +87,7 @@ def request_password_reset(password_reset_request: schemas.PasswordResetRequest,
     return { "detail": "OTP sent to your email"}
 
 
-@router.post("/password-reset")
+@router.post("/reset_password", status_code=status.HTTP_201_CREATED)
 def reset_password(password_reset: schemas.PasswordReset, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == password_reset.email).first()
 
@@ -103,7 +105,7 @@ def reset_password(password_reset: schemas.PasswordReset, db: Session = Depends(
 
 #########################################  RESET PASSWORD  ##################################################################################################
 
-@router.post("/update-password", response_model= schemas.Token)
+@router.post("/update_password", status_code=status.HTTP_201_CREATED, response_model= schemas.Token)
 def update_password(password_update: schemas.PasswordUpdate, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == password_update.email).first()
 
@@ -127,7 +129,7 @@ def update_password(password_update: schemas.PasswordUpdate, db: Session = Depen
 ############################################  LOGIN  ##################################################################################################
 
 
-@router.post("/login", response_model= schemas.Token)
+@router.post("/login", status_code=status.HTTP_202_ACCEPTED, response_model= schemas.Token)
 def login_user(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == user_credentials.username).first()
 

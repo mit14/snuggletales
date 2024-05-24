@@ -40,7 +40,7 @@ def generate_otp():
 
 def store_otp(db: Session, user_id: int):
     otp = generate_otp()
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=30)  # OTP valid for 10 minutes
+    expires_at = datetime.utcnow() + timedelta(minutes=30)  
     otp_record = ResetPasswordOTP(user_id=user_id, otp=otp, expires_at=expires_at)
     db.add(otp_record)
     db.commit()
