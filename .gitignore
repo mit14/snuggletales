@@ -5,7 +5,7 @@ venv/
 .env
 gunicorn.service
 nginx
-
+test/
 >>>>>>> dev
 # Byte-compiled / optimized / DLL files
 __pycache__/
