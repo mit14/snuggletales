@@ -15,8 +15,10 @@ jobs:
       SECRET_KEY: ${{secrets.SECRET_KEY}}
       ALGORITHM: ${{secrets.ALGORITHM}}
       ACCESS_TOKEN_EXPIRES_WEEKS: ${{secrets.ACCESS_TOKEN_EXPIRES_WEEKS}}
+      EMAIL_OTP: ${{secrets.EMAIL_OTP}}
+      EMAIL_PASSSWORD: ${{secrets.EMAIL_PASSWORD}}
 
-    services: 
+    services:
       postgres:
         image: postgres
         env:
@@ -29,7 +31,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     runs-on: ubuntu-latest
     steps:
       - name: Pulling Git repo
