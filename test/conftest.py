@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 from fastapi import status
 import pytest
 from app.main import app
+from app.config import settings
 from app import models, utils, schemas
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -9,7 +10,7 @@ from app.database import get_db
 from app.database import Base
 from app.oauth2 import create_access_token
 
-SQLALCHEMY_DATABASE_URL = "postgresql://mitpatel:Password123@localhost/snuggle_tales_test_env"
+SQLALCHEMY_DATABASE_URL = f"postgresql://mitpatel:Password123@localhost/snuggle_tales_test_env"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
