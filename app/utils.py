@@ -59,6 +59,7 @@ def delete_otp(user_id, db: Session):
     db.query(ResetPasswordOTP).filter(ResetPasswordOTP.user_id == user_id).delete()
     db.commit()
 
+
 ########################################  CREATE AND VERIFY HASH  ###########################################
 
 def hash(password: str):

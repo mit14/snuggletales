@@ -103,7 +103,9 @@ def reset_password(password_reset: schemas.PasswordReset, db: Session = Depends(
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
 
+
 #########################################  RESET PASSWORD  ##################################################################################################
+
 
 @router.post("/update_password", status_code=status.HTTP_201_CREATED, response_model= schemas.Token)
 def update_password(password_update: schemas.PasswordUpdate, db: Session = Depends(database.get_db)):
@@ -122,8 +124,6 @@ def update_password(password_update: schemas.PasswordUpdate, db: Session = Depen
     
     else:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid Credentials')
-
-
 
 
 ############################################  LOGIN  ##################################################################################################
