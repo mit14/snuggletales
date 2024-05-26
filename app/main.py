@@ -30,3 +30,4 @@ app.include_router(admin_portal.router)
 @app.get("/")
 def root():
     return {"message": "Hello World"}
+
