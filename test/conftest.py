@@ -9,7 +9,7 @@ from app.database import get_db
 from app.database import Base
 from app.oauth2 import create_access_token
 
-SQLALCHEMY_DATABASE_URL = f"postgresql://mitpatel:Password123@localhost/snuggle_tales_test_env"
+SQLALCHEMY_DATABASE_URL = f"postgresql://postgres:password123@localhost/snuggle_tales_test_env"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
