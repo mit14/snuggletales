@@ -17,4 +17,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-print(f"Email Password: {settings.email_password}")
+
