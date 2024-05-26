@@ -99,7 +99,7 @@ def reset_password(password_reset: schemas.PasswordReset, db: Session = Depends(
         user.password = hash_password
         db.commit()
         utils.delete_otp(user.id, db)
-        return {"details": "Password changed, please login."}
+        return {"detail": "Password changed, please login."}
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
 

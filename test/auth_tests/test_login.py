@@ -1,7 +1,6 @@
-from fastapi import status
 import pytest
 from jose import jwt
-from app import utils, models, schemas
+from app import schemas
 from app.config import settings
 
 MAIN_URL = "/api/dev/v1/user/"

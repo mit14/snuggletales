@@ -2,7 +2,7 @@ name: Build and Deploy Code
 
 on:
   push:
-    branches: ["main", "dev-test"]
+    branches: ["main", "dev"]
 
 jobs:
   SnuggleTalesDev:
