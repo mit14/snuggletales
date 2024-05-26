@@ -23,6 +23,7 @@ app.add_middleware(
 )
 
 
+
 # app.include_router(registration.router)
 app.include_router(auth.router)
 app.include_router(admin_portal.router)

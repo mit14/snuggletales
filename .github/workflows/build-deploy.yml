@@ -33,7 +33,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     runs-on: ubuntu-latest
     steps:
       - name: Pulling Git repo
@@ -46,14 +45,5 @@ jobs:
         run: python -m pip install --upgrade pip
       - name: Install all dependencies
         run: pip install -r requirements.txt
-      - name: Print environment variables
-        run: |
-          echo "DATABASE_HOSTNAME: ${{ secrets.DATABASE_HOSTNAME }}"
-          echo "DATABASE_PORT: ${{ secrets.DATABASE_PORT }}"
-          echo "DATABASE_NAME: ${{ secrets.DATABASE_NAME }}"
-          echo "DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}"
-          echo "SECRET_KEY: ${{ secrets.SECRET_KEY }}"
-          echo "ALGORITHM: ${{ secrets.ALGORITHM }}"
-          echo "EMAIL_OTP: ${{ secrets.EMAIL_OTP }}"
       - name: Test with pytest
-        run: pytest
+        run: pytest --disable-warnings
