@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from .database import Base, engine
-from app.routers import auth, admin_portal
+from app.routers import auth, admin_portal, stories, like_story
 from .config import settings
 
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +27,9 @@ app.add_middleware(
 # app.include_router(registration.router)
 app.include_router(auth.router)
 app.include_router(admin_portal.router)
+app.include_router(stories.router)
+app.include_router(like_story.router)
+
 
 @app.get("/")
 def root():

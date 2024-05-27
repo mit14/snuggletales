@@ -30,7 +30,7 @@ async def send_email(to_email: str, subject: str, body: str):
         password=settings.epwd,
         start_tls=True,
     )
-
+    
 
 ########################################  GENERATE, STORE, DELETE OTP ###########################################
 

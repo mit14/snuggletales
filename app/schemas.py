@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
+
+from sqlalchemy import Null
 
 
 class UserCreate(BaseModel):
@@ -56,7 +58,7 @@ class CreatePage(BaseModel):
     page_number: int
     content: str
     image_path: str
-    audio_file: str
+    audio_file: Optional[str] = "test"
 
 class AdminStroyOut(BaseModel):
     story_id: int
@@ -65,10 +67,49 @@ class AdminStroyOut(BaseModel):
     title_image_path: str
 
 class AdminPageOut(BaseModel):
-    page_id: int
+    # page_id: int
     story_id: int
     page_number: int
     content: str
     image_path: str
+
+
+class UserStoryOut(BaseModel):
+    story_id: int
+    title: str
+    description: str
+    title_image_path: str
+    likes: int
+    is_liked: bool
+
+    class Config:
+        orm_mode = True
+
+
+class StoriesResponse(BaseModel):
+    all_stories: List[UserStoryOut]
+    top_rated_stories: Optional[List[UserStoryOut]] = []
+
+
+class UserStoryLike(BaseModel):
+    story_id: int
+    dir: int = Field(..., ge=-1, le=1)
     
-    
+class UserLikedStoryOut(BaseModel):
+    story_id: int
+    title: str
+    description: str
+    title_image_path: str
+
+from pydantic import BaseModel
+
+class UserPageOut(BaseModel):
+    story_id: int
+    story_title: str
+    page_id: int
+    content: str
+    page_number: int
+    has_next_page: bool
+
+    class Config:
+        orm_mode = True
