@@ -27,7 +27,7 @@ async def send_email(to_email: str, subject: str, body: str):
         hostname="smtp-mail.outlook.com",
         port=587,
         username=settings.email_otp,
-        password=settings.email_password,
+        password=settings.epwd,
         start_tls=True,
     )
 
@@ -58,6 +58,7 @@ def validate_otp(db: Session, user_id: int, otp: str):
 def delete_otp(user_id, db: Session):
     db.query(ResetPasswordOTP).filter(ResetPasswordOTP.user_id == user_id).delete()
     db.commit()
+
 
 ########################################  CREATE AND VERIFY HASH  ###########################################
 

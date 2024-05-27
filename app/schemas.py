@@ -56,6 +56,7 @@ class CreatePage(BaseModel):
     page_number: int
     content: str
     image_path: str
+    audio_file: str
 
 class AdminStroyOut(BaseModel):
     story_id: int

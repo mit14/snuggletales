@@ -10,10 +10,11 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expires_weeks: int
     email_otp: str
-    email_password: str
+    epwd: str
 
     class Config:
         env_file = ".env"
 
 
 settings = Settings()
+

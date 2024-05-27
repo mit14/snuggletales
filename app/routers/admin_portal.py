@@ -93,11 +93,24 @@ def create_page(story_id: int, page: schemas.CreatePage, db: Session = Depends(d
     if existing_page:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Page number {page.page_number} already exists for story with id: {story_id}.")
     
-    new_page = models.Pages(story_id= story_id, **page.model_dump())
+    # new_page = models.Pages(story_id= story_id, **page.model_dump())
+    new_page = models.Pages(
+        story_id= story_id,
+        page_number = page.page_number,
+        content = page.content,
+        image_path = page.image_path
+        )
     db.add(new_page)
     db.commit()
     db.refresh(new_page)
+    audio_file = models.AudioFile(
+        page_id = new_page.page_id,
+        audio_path = page.audio_file,
 
+    )
+    db.add(audio_file)
+    db.commit()
+    db.refresh(audio_file)
     return {"detail": "Page added successfully"}
 
 
