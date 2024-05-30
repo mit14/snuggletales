@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI()
 
 origins = ["*"]
-
+# use an alternative way
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

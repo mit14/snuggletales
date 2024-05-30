@@ -115,7 +115,7 @@ def create_page(story_id: int, page: schemas.CreatePage, db: Session = Depends(d
 
 
 ################################################  Get Pages of a Story  ##################################################################################################
-
+#Missing audio file path
 
 @router.get("/{story_id}/page", response_model=List[schemas.AdminPageOut])
 def get_pages(story_id: int, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
@@ -197,7 +197,7 @@ def update_story(story_id: int, updated_story: schemas.CreateStory , db: Session
     return {"detail": "Story has been updated."}
 
 
-##################################################  Edit/Update Story  ##################################################################################################
+##################################################  Edit/Update Page  ##################################################################################################
 
 
 @router.put("/{story_id}/{page_number}")
