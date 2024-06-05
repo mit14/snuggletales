@@ -2,11 +2,11 @@ from typing import List
 from fastapi import  Response, status, HTTPException, Depends, APIRouter
 from fastapi import BackgroundTasks
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 
 from app import database, utils, schemas, models, oauth2
-
 
 
 router = APIRouter(prefix= "/admin/dev/api",
@@ -15,10 +15,7 @@ router = APIRouter(prefix= "/admin/dev/api",
 
 
 
-
 ###############################################################  LOGIN  ##################################################################################################
-
-
 
 @router.post("/login", response_model= schemas.Token)
 def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
@@ -41,7 +38,6 @@ def login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session =
 
 ########################################################  Create Story  ##################################################################################################
 
-
 @router.post("/story")
 def create_story(story: schemas.CreateStory, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user) ):
     
@@ -60,7 +56,6 @@ def create_story(story: schemas.CreateStory, db: Session = Depends(database.get_
 
 #####################################################  Get All Stories  ##################################################################################################
 
-
 @router.get("/story", response_model=List[schemas.AdminStroyOut])
 def get_all_stories(db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
     
@@ -74,7 +69,6 @@ def get_all_stories(db: Session = Depends(database.get_db), current_user: int = 
 
 
 #########################################################  Create Page  ##################################################################################################
-
 
 @router.post("/{story_id}/page")
 def create_page(story_id: int, page: schemas.CreatePage, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user) ):
@@ -116,16 +110,32 @@ def create_page(story_id: int, page: schemas.CreatePage, db: Session = Depends(d
 
 ################################################  Get Pages of a Story  ##################################################################################################
 
-
 @router.get("/{story_id}/page", response_model=List[schemas.AdminPageOut])
 def get_pages(story_id: int, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
     
     if current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authorized")
     
-    pages = db.query(models.Pages).filter(models.Pages.story_id == story_id).all()
+    pages_query = (
+        db.query(models.Pages, models.AudioFile.audio_path)
+        .join(models.AudioFile, models.Pages.page_id == models.AudioFile.page_id, isouter=True)
+        .filter(models.Pages.story_id == story_id)
+        .all()
+    )
+    
+    result = [
+        {
+        'story_id': page.Pages.story_id,
+        'page_number': page.Pages.page_number,
+        'content': page.Pages.content,
+        'image_path': page.Pages.image_path,
+        'audio_path': page.audio_path if page.audio_path else None
+    } for page in pages_query
+    ]
 
-    return pages
+    return result
+
+
 
 
 #######################################################  Delete Story  ##################################################################################################
@@ -151,9 +161,7 @@ def delete_story(story_id: int, db: Session = Depends(database.get_db), current_
 
 
 
-
 #######################################################  Delete Page  ##################################################################################################
-
 
 @router.delete('/{story_id}/{page_number}', status_code=status.HTTP_204_NO_CONTENT)
 def delete_page(story_id: int,page_number: int, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
@@ -172,7 +180,6 @@ def delete_page(story_id: int,page_number: int, db: Session = Depends(database.g
     db.commit()
 
     return Response(status_code= status.HTTP_204_NO_CONTENT)
-
 
 
 
@@ -198,7 +205,6 @@ def update_story(story_id: int, updated_story: schemas.CreateStory , db: Session
 
 
 ##################################################  Edit/Update Story  ##################################################################################################
-
 
 @router.put("/{story_id}/{page_number}")
 def update_page(story_id: int, page_number: int, updated_page: schemas.CreatePage, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):

@@ -1,14 +1,16 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from .utils import limiter, setup_exception_handlers
 from .database import Base, engine
 from app.routers import auth, admin_portal, stories, like_story
 from .config import settings
 
-from fastapi.middleware.cors import CORSMiddleware
 
 
 
-# Base.metadata.create_all(bind=engine) // deactivated because using alembic 
+
+# Base.metadata.create_all(bind=engine) ##// deactivated because using alembic 
 
 app = FastAPI()
 
@@ -22,6 +24,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+app.state.limiter = limiter
+setup_exception_handlers(app)
 
 
 # app.include_router(registration.router)

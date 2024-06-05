@@ -1,11 +1,15 @@
-from fastapi import  status, HTTPException, Depends, APIRouter
+from fastapi import  Request, status, HTTPException, Depends, APIRouter
 from fastapi import BackgroundTasks
+from fastapi.responses import JSONResponse
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 
-
 from app import database, utils, schemas, models, oauth2
-
+from app.config import settings
+limiter = Limiter(key_func=get_remote_address)
 
 
 router = APIRouter(prefix= "/api/dev/v1/user",
@@ -18,7 +22,8 @@ router = APIRouter(prefix= "/api/dev/v1/user",
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED ,response_model=schemas.UserOut)
-async def create_user(user: schemas.UserCreate, background_tasks: BackgroundTasks,db: Session = Depends(database.get_db)):
+@limiter.limit(settings.short_limit)
+async def create_user(request: Request,user: schemas.UserCreate, background_tasks: BackgroundTasks,db: Session = Depends(database.get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
     if db_user:
@@ -75,7 +80,8 @@ def verify_user(otp_validation: schemas.OTPValidation, db: Session = Depends(dat
 
 
 @router.post("/forgot_password_otp", status_code=status.HTTP_201_CREATED)
-def forgot_password_otp(password_reset_request: schemas.PasswordResetRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
+@limiter.limit(settings.short_limit)
+def forgot_password_otp(request: Request,password_reset_request: schemas.PasswordResetRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == password_reset_request.email).first()
     
     if not user:
@@ -88,7 +94,8 @@ def forgot_password_otp(password_reset_request: schemas.PasswordResetRequest, ba
 
 
 @router.post("/reset_password", status_code=status.HTTP_201_CREATED)
-def reset_password(password_reset: schemas.PasswordReset, db: Session = Depends(database.get_db)):
+@limiter.limit(settings.short_limit)
+def reset_password(request: Request,password_reset: schemas.PasswordReset, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == password_reset.email).first()
 
     if not user:
@@ -108,7 +115,8 @@ def reset_password(password_reset: schemas.PasswordReset, db: Session = Depends(
 
 
 @router.post("/update_password", status_code=status.HTTP_201_CREATED, response_model= schemas.Token)
-def update_password(password_update: schemas.PasswordUpdate, db: Session = Depends(database.get_db)):
+@limiter.limit(settings.long_limit)
+def update_password(request: Request, password_update: schemas.PasswordUpdate, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == password_update.email).first()
 
     if not user:
@@ -130,7 +138,8 @@ def update_password(password_update: schemas.PasswordUpdate, db: Session = Depen
 
 
 @router.post("/login", status_code=status.HTTP_202_ACCEPTED, response_model= schemas.Token)
-def login_user(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
+@limiter.limit(settings.long_limit)
+def login_user(request: Request, user_credentials: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == user_credentials.username).first()
 
     if not user:
