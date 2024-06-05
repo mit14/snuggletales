@@ -18,7 +18,7 @@ jobs:
       ALGORITHM: ${{secrets.ALGORITHM}}
       ACCESS_TOKEN_EXPIRES_WEEKS: ${{secrets.ACCESS_TOKEN_EXPIRES_WEEKS}}
       EMAIL_OTP: ${{secrets.EMAIL_OTP}}
-      EPWD: ${{secrets.EPWD}}
+      EMAIL_PASSWORD: ${{secrets.EPWD}}
 
     services:
       postgres:
