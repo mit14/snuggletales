@@ -72,6 +72,7 @@ class AdminPageOut(BaseModel):
     page_number: int
     content: str
     image_path: str
+    audio_path: str
 
 
 class UserStoryOut(BaseModel):

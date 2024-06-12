@@ -1,19 +1,21 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from .utils import limiter, setup_exception_handlers, setup_logger
 from .database import Base, engine
 from app.routers import auth, admin_portal, stories, like_story
 from .config import settings
 
-from fastapi.middleware.cors import CORSMiddleware
 
 
 
-# Base.metadata.create_all(bind=engine) // deactivated because using alembic 
+
+# Base.metadata.create_all(bind=engine) ##// deactivated because using alembic 
 
 app = FastAPI()
 
 origins = ["*"]
-# use an alternative way
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -22,6 +24,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+app.state.limiter = limiter
+setup_exception_handlers(app)
+
+logger = setup_logger()
 
 
 # app.include_router(registration.router)
@@ -33,5 +40,6 @@ app.include_router(like_story.router)
 
 @app.get("/")
 def root():
+    logger.info("Root endpoint was accessed")
     return {"message": "Hello World"}
 
