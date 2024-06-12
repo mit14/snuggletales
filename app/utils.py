@@ -9,6 +9,7 @@ from aiosmtplib import send
 from email.message import EmailMessage
 from app.models import ResetPasswordOTP
 from app.oauth2 import get_current_user
+from loguru import logger
 import random
 import string
 from .config import settings
@@ -73,6 +74,7 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
+
 #########################################  RATE LIMITTER  ###################################################
 
 limiter = Limiter(key_func=get_remote_address)
@@ -85,3 +87,12 @@ def rate_limit_exceeded_handler(request, exc):
 
 def setup_exception_handlers(app):
     app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+
+
+#########################################  LOGGER  ###################################################
+
+def setup_logger():
+    # Configure loguru logger
+    logger.add("snuggle_tales.log", rotation="1 week", compression="zip", level="INFO")
+
+    return logger

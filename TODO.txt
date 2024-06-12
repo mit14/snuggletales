@@ -1,2 +1,6 @@
 change the rate limiter to utils
 setup the loggin. 
+
+
+use logguru for loggin. 
+failtoban setup 

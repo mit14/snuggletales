@@ -6,6 +6,7 @@ from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
+from loguru import logger
 
 from app import database, utils, schemas, models, oauth2
 from app.config import settings
@@ -27,6 +28,7 @@ async def create_user(request: Request,user: schemas.UserCreate, background_task
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
     if db_user:
+        logger.info(f"Falied to register user, user already registered: {user.email}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
 
     hash_password = utils.hash(user.password)
@@ -48,7 +50,7 @@ async def create_user(request: Request,user: schemas.UserCreate, background_task
 
     otp = utils.store_otp(db, new_user.id)
     background_tasks.add_task(utils.send_email, user.email, "Your OTP Code", f"Your OTP code is {otp}")
-
+    logger.info(f"New user created, user: {new_user.email}")
     return new_user
 
 
@@ -58,9 +60,11 @@ def verify_user(otp_validation: schemas.OTPValidation, db: Session = Depends(dat
     user = db.query(models.User).filter(models.User.email == otp_validation.email).first()
     
     if not user:
+        logger.warning(f"Falied to verify, user not found: User input: {otp_validation.email}")
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     
     elif user.is_verified == True:
+        logger.info(f"User already verified. User: {otp_validation.email}")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail= "User already Verified")
     
     
@@ -69,9 +73,11 @@ def verify_user(otp_validation: schemas.OTPValidation, db: Session = Depends(dat
         db.commit()
         access_token = oauth2.create_access_token(data={"user_id":user.id} )
         utils.delete_otp(user.id, db)
+        logger.info(f"User verification success. User: {user.email}")
         return {"access_token": access_token, "token_type": "bearer"}
     
     else:
+        logger.warning(f"Invalid or Expired OTP. User: {otp_validation.email}")
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
     
 
@@ -85,11 +91,12 @@ def forgot_password_otp(request: Request,password_reset_request: schemas.Passwor
     user = db.query(models.User).filter(models.User.email == password_reset_request.email).first()
     
     if not user:
+        logger.warning(f"Falied to request reset password OTP, user not found: {password_reset_request.email}")
         raise HTTPException(status_code=404, detail="User not found")
     
     otp = utils.store_otp(db, user.id)
     background_tasks.add_task(utils.send_email, password_reset_request.email, "Your Password Reset OTP", f"Your OTP code is {otp}")
-    
+    logger.info(f"OTP successfully sent for user: {password_reset_request.email}")
     return { "detail": "OTP sent to your email"}
 
 
@@ -99,6 +106,7 @@ def reset_password(request: Request,password_reset: schemas.PasswordReset, db: S
     user = db.query(models.User).filter(models.User.email == password_reset.email).first()
 
     if not user:
+        logger.warning(f"Falied to reset password, user not found: {password_reset.email}")
         raise HTTPException(status_code=404, detail="User not found")
     
     if utils.validate_otp(db, user.id, password_reset.otp):
@@ -106,8 +114,10 @@ def reset_password(request: Request,password_reset: schemas.PasswordReset, db: S
         user.password = hash_password
         db.commit()
         utils.delete_otp(user.id, db)
+        logger.info(f"Password successfully reset by user: {user.email}")
         return {"detail": "Password changed, please login."}
     else:
+        logger.critical(f"Failed update password attempt for user: {user.email}")
         raise HTTPException(status_code=400, detail="Invalid OTP or OTP expired")
 
 
@@ -120,6 +130,7 @@ def update_password(request: Request, password_update: schemas.PasswordUpdate, d
     user = db.query(models.User).filter(models.User.email == password_update.email).first()
 
     if not user:
+        logger.warning(f"Falied to update password, user not found: {password_update.email}")
         raise HTTPException(status_code=404, detail="User not found")
     
     if utils.verify_password(password_update.old_password, user.password):
@@ -128,9 +139,11 @@ def update_password(request: Request, password_update: schemas.PasswordUpdate, d
         db.commit()
 
         access_token = oauth2.create_access_token(data={"user_id":user.id})
+        logger.info(f"Password successfully updated by user: {user.email}")
         return {"access_token": access_token, "token_type": "bearer"}
     
     else:
+        logger.critical(f"Failed update password attempt for user: {user.email}")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid Credentials')
 
 
@@ -143,15 +156,18 @@ def login_user(request: Request, user_credentials: OAuth2PasswordRequestForm = D
     user = db.query(models.User).filter(models.User.email == user_credentials.username).first()
 
     if not user:
+        logger.warning(f"Falied login, user not found: {user_credentials.username}")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid Credentials')
     
     if user.is_verified == False:
+        logger.warning(f"Falied login, user not verified: {user_credentials.username}")
         raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED , detail= "User not verified, please verify.")
 
     
     if not utils.verify_password(user_credentials.password, user.password):
+        logger.critical(f"Failed login attemp for user, incorrect password: {user_credentials.username}")
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail='Invalid Credentials')
     
     access_token = oauth2.create_access_token(data={"user_id":user.id})
-
+    logger.info(f"Successful login for user: {user_credentials.username}")
     return {"access_token": access_token, "token_type": "bearer"}
