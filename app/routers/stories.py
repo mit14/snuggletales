@@ -149,7 +149,7 @@ def get_story(story_id: int, db: Session = Depends(database.get_db), current_use
 
 @router.post("/{story_id}/next/{current_page_id}", response_model=schemas.UserPageOut)
 def next_page(story_id: int, current_page_id: int, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
-    # Get the current page
+    
     current_page = db.query(models.Pages).filter_by(page_id=current_page_id, story_id=story_id).first()
     next_page = db.query(models.Pages).filter_by(story_id=story_id, page_number=current_page.page_number + 1).first()
 

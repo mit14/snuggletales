@@ -4,6 +4,7 @@ from . import schemas, database, models, config
 from fastapi import Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from loguru import logger
 
 oath2_scheme = OAuth2PasswordBearer(tokenUrl='login') # need to pass the url endpoint.
 
@@ -15,6 +16,8 @@ SECRET_KEY = config.settings.secret_key
 ALGORITHM = config.settings.algorithm
 ACCESS_TOKEN_EXPIRES_WEEKS = config.settings.access_token_expires_weeks
 
+###############################################################  CREATE ACCESS TOKEN  ##################################################################################################
+
 def create_access_token(data: dict):
     to_encode = data.copy()
 
@@ -25,6 +28,7 @@ def create_access_token(data: dict):
     
     return encoded_jwt
 
+###############################################################  VERIFY ACCESS TOKEN  ##################################################################################################
 
 def verify_access_token(token: str, credential_exception):
     try:
@@ -40,6 +44,7 @@ def verify_access_token(token: str, credential_exception):
         raise credential_exception
     return token_data
 
+###############################################################  GET CURRENT USER  ##################################################################################################
 
 def get_current_user(token: str = Depends(oath2_scheme), db: Session = Depends(database.get_db)):
     credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validiate credentials", headers={"WWW-Authenticate": "Bearer"})
@@ -48,4 +53,19 @@ def get_current_user(token: str = Depends(oath2_scheme), db: Session = Depends(d
     
     user = db.query(models.User).filter(models.User.id == token.user_id).first()
     
+    return user
+
+###############################################################  VERIFY ADMIN  ##################################################################################################
+
+def admin_user(token: str = Depends(oath2_scheme), db: Session = Depends(database.get_db)):
+    credential_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validiate credentials", headers={"WWW-Authenticate": "Bearer"})
+    
+    token = verify_access_token(token, credential_exception)
+    
+    user = db.query(models.User).filter(models.User.id == token.user_id).first()
+    
+    if user.role != "admin":
+        logger.critical(f"Falied to authenticate user. {user.email}")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= "Not authorized")
+
     return user

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .utils import limiter, setup_exception_handlers
+from .utils import limiter, setup_exception_handlers, setup_logger
 from .database import Base, engine
 from app.routers import auth, admin_portal, stories, like_story
 from .config import settings
@@ -28,6 +28,8 @@ app.add_middleware(
 app.state.limiter = limiter
 setup_exception_handlers(app)
 
+logger = setup_logger()
+
 
 # app.include_router(registration.router)
 app.include_router(auth.router)
@@ -38,5 +40,6 @@ app.include_router(like_story.router)
 
 @app.get("/")
 def root():
+    logger.info("Root endpoint was accessed")
     return {"message": "Hello World"}
 
