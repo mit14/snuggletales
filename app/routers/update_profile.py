@@ -1,8 +1,6 @@
-from typing import List
 from fastapi import  status, HTTPException, Depends, APIRouter
-from fastapi import BackgroundTasks
 from sqlalchemy.orm import Session
-from app import database, utils, schemas, models, oauth2
+from app import database, schemas, models, oauth2
 
 
 
@@ -17,7 +15,6 @@ def update_profile(data: schemas.ProfileUpdate, db: Session = Depends(database.g
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Using direct attribute assignment to update user fields
     for key, value in data.dict(exclude_unset=True).items():
         if hasattr(user, key):
             setattr(user, key, value)
