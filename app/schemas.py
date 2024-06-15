@@ -102,8 +102,6 @@ class UserLikedStoryOut(BaseModel):
     description: str
     title_image_path: str
 
-from pydantic import BaseModel
-
 class UserPageOut(BaseModel):
     story_id: int
     story_title: str
@@ -114,3 +112,9 @@ class UserPageOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+class ProfileUpdate(BaseModel):
+    email: Optional[str] = None
+    age: Optional[str] = None
+    phone_number: Optional[str] = None
+    

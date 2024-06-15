@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .utils import limiter, setup_exception_handlers, setup_logger
 from .database import Base, engine
-from app.routers import auth, admin_portal, stories, like_story
+from app.routers import auth, admin_portal, stories, like_story, update_profile
 from .config import settings
 
 
@@ -36,6 +36,7 @@ app.include_router(auth.router)
 app.include_router(admin_portal.router)
 app.include_router(stories.router)
 app.include_router(like_story.router)
+app.include_router(update_profile.router)
 
 
 @app.get("/")
