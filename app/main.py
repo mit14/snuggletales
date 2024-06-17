@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from .utils import limiter, setup_exception_handlers, setup_logger
 from .database import Base, engine
@@ -38,8 +40,10 @@ app.include_router(stories.router)
 app.include_router(like_story.router)
 
 
+app.mount("/static", StaticFiles(directory="app/website"), name="static")
+
 @app.get("/")
 def root():
     logger.info("Root endpoint was accessed")
-    return {"message": "Hello World"}
-
+    # Directly return the index.html file
+    return FileResponse("app/website/index.html")
