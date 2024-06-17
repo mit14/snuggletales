@@ -206,7 +206,7 @@ async def verify_token_and_extract_user_info(token: str):
 
         user_info = {
             "email": idinfo.get('email'),
-            "provider_id": idinfo.get('provider_id')
+            "provider_id": idinfo['sub'] 
         }
         return user_info
     except ValueError:
