@@ -181,20 +181,18 @@ def login_user(request: Request, user_credentials: OAuth2PasswordRequestForm = D
 google = oauth.register(
     name='google',
     client_id=settings.google_client_id,
+    client_secret=settings.google_client_secret,
     access_token_url='https://accounts.google.com/o/oauth2/token',
     authorize_url='https://accounts.google.com/o/oauth2/auth',
     api_base_url='https://www.googleapis.com/oauth2/v1/',
     client_kwargs={'scope': 'openid email profile'}
 )
 
-
 @router.get('/login/google')
 async def login_via_google(request: Request):
     redirect_uri = request.url_for('authorize_google')
-    print("Redirect URI:", redirect_uri)  # Debugging output
-    auth_url = google.create_authorization_url(redirect_uri)
-    print("Authorization URL:", auth_url)  # Debugging output
-    return auth_url
+    # return await google.authorize_redirect(request, redirect_uri)
+    return google.create_authorization_url(redirect_uri)
 
 @router.get('/authorize/google')
 async def authorize_google(request: Request, db: Session = Depends(database.get_db)):
