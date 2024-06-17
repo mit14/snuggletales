@@ -189,9 +189,9 @@ async def verify_google_token(token_data: schemas.GoogleToken, db: Session = Dep
     
     user = db.query(models.User).filter_by(email=user_info.email, provider='google').first()
     if not user:
-        user = models.User(email=user_info.email,
+        user = models.User(email=user_info['email'],
                            provider='google', 
-                           provider_id=user_info.provider_id, 
+                           provider_id=user_info['provider_id'], 
                            is_verified=True)
         db.add(user)
         db.commit()
@@ -203,11 +203,14 @@ async def verify_google_token(token_data: schemas.GoogleToken, db: Session = Dep
 async def verify_token_and_extract_user_info(token: str):
     try:
         idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.google_client_id)
-        print(idinfo)
+        print("*******************************************************************")
+        print(idinfo['email'])
         user_info = {
-            "email": idinfo.get('email'),
+            "email": idinfo['email'],
             "provider_id": idinfo['sub']
         }
+        print("*******************************************************************")
+        print(user_info)
         return user_info
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid token")
