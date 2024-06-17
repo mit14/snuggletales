@@ -191,13 +191,11 @@ google = oauth.register(
 @router.get('/login/google')
 async def login_via_google(request: Request):
     redirect_uri = request.url_for('authorize_google')
-    # return await google.authorize_redirect(request, redirect_uri)
-    return google.create_authorization_url(redirect_uri)
+    return await google.authorize_redirect(request, redirect_uri)
 
 @router.get('/authorize/google')
 async def authorize_google(request: Request, db: Session = Depends(database.get_db)):
-    code = request.query_params.get('code')
-    token = await google.fetch_token(authorization_response=request.url, code=code)
+    token = await google.authorize_access_token(request)
     user_info = await google.parse_id_token(request, token)
     email = user_info.get('email')
     provider_id = user_info.get('sub')

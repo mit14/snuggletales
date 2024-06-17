@@ -1,4 +1,4 @@
-from fastapi import  Response, status, HTTPException, Depends, APIRouter
+from fastapi import  status, HTTPException, Depends, APIRouter
 from sqlalchemy.orm import Session
 from app import database, schemas, models, oauth2
 
@@ -21,18 +21,3 @@ def update_profile(data: schemas.ProfileUpdate, db: Session = Depends(database.g
     db.commit()
 
     return {"message": "Profile updated successfully"}
-
-@router.delete("/delete_profile", status_code= status.HTTP_204_NO_CONTENT)
-def delete_profile(db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
-
-    user_query = db.query(models.User).filter(current_user == models.User.id)
-    user = user_query.first()
-
-    if user == None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f'User not found.')
-
-    user_query.delete()
-    db.commit()
-
-    return Response(status_code= status.HTTP_204_NO_CONTENT)
-
