@@ -205,7 +205,7 @@ async def verify_token_and_extract_user_info(token: str):
     try:
         print(token)
         idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.google_client_id)
-
+        print(idinfo)
         user_info = {
             "email": "abc@gmail.com",
             "provider_id": 1234 
