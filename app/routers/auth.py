@@ -182,7 +182,7 @@ def login_user(request: Request, user_credentials: OAuth2PasswordRequestForm = D
 
 @router.post("/verify-google-token")
 async def verify_google_token(token_data: schemas.GoogleToken, db: Session = Depends(database.get_db)):
-    user_info = await verify_token_and_extract_user_info(token_data)
+    user_info = await verify_token_and_extract_user_info(token_data.token)
     
     if user_info is None:
         print("i am in verify-google")
@@ -212,6 +212,7 @@ async def verify_token_and_extract_user_info(token: str):
         }
         return user_info
     except ValueError:
+
         print("i am here")
         raise HTTPException(status_code=400, detail="Invalid token")
     
