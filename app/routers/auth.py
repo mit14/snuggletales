@@ -9,6 +9,8 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from loguru import logger
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 from app import database, utils, schemas, models, oauth2
 from app.config import settings
@@ -178,35 +180,57 @@ def login_user(request: Request, user_credentials: OAuth2PasswordRequestForm = D
 
 ################################################### LOGIN WITH GOOGLE  ################################################################################
 
-google = oauth.register(
-    name='google',
-    client_id=settings.google_client_id,
-    client_secret=settings.google_client_secret,
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
-    client_kwargs={'scope': 'openid email profile'}
-)
-
-@router.get('/login/google')
-async def login_via_google(request: Request):
-    redirect_uri = request.url_for('authorize_google')
-    return await google.authorize_redirect(request, redirect_uri)
-
-@router.get('/authorize/google')
-async def authorize_google(request: Request, db: Session = Depends(database.get_db)):
-    token = await google.authorize_access_token(request)
-    user_info = await google.parse_id_token(request, token)
-    email = user_info.get('email')
-    provider_id = user_info.get('sub')
-
-    user = db.query(models.User).filter_by(email=email, provider='google').first()
+@router.post("/verify-google-token")
+async def verify_google_token(token_data: schemas.GoogleToken, db: Session = Depends(database.get_db)):
+    user_info = await verify_token_and_extract_user_info(token_data.token)
+    if user_info is None:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    
+    user = db.query(models.User).filter_by(email=user_info.email, provider='google').first()
     if not user:
-        user = models.User(email=email,
+        user = models.User(email=user_info.email,
                            provider='google', 
-                           provider_id=provider_id, is_verified=True)
+                           provider_id=user_info.provider_id, 
+                           is_verified=True)
         db.add(user)
         db.commit()
 
     access_token = oauth2.create_access_token(data={"user_id": user.id})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+async def verify_token_and_extract_user_info(token: str):
+    try:
+        # Specify the CLIENT_ID of the app that accesses the backend:
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.google_client_id)
+
+        user_info = {
+            "email": idinfo.get('email'),
+            "provider_id": idinfo.get('provider_id')
+        }
+        return user_info
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    
+
+
+
+
+
+# @router.get('/authorize/google')
+# async def authorize_google(request: Request, db: Session = Depends(database.get_db)):
+#     token = await google.authorize_access_token(request)
+#     user_info = await google.parse_id_token(request, token)
+#     email = user_info.get('email')
+#     provider_id = user_info.get('sub')
+
+#     user = db.query(models.User).filter_by(email=email, provider='google').first()
+#     if not user:
+#         user = models.User(email=email,
+#                            provider='google', 
+#                            provider_id=provider_id, is_verified=True)
+#         db.add(user)
+#         db.commit()
+
+#     access_token = oauth2.create_access_token(data={"user_id": user.id})
+#     return {"access_token": access_token, "token_type": "bearer"}
