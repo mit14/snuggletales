@@ -11,3 +11,6 @@ failtoban setup
 1- if user loged in via personal email 
 if yes then link ? yes/no remove password
 forgot password -- check if user has provider = google or apple, then error, cant change. Login with apple or google. 
+
+
+fix the error response when getting the wrong token. 

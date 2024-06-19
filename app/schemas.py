@@ -99,8 +99,9 @@ class UserStoryLike(BaseModel):
 class UserLikedStoryOut(BaseModel):
     story_id: int
     title: str
-    description: str
     title_image_path: str
+    likes: int
+    is_liked: bool
 
 class UserPageOut(BaseModel):
     story_id: int
