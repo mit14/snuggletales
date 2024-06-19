@@ -31,7 +31,7 @@ async def send_email(to_email: str, subject: str, body: str):
         hostname="smtp-mail.outlook.com",
         port=587,
         username=settings.email_otp,
-        password=settings.epwd,
+        password=settings.email_password,
         start_tls=True,
     )
     

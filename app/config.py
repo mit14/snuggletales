@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     email_password: str
     short_limit: str
     long_limit: str
+    google_client_id: str
+    google_client_secret: str
 
     class Config:
         env_file = ".env"

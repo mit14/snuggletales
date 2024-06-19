@@ -1,17 +1,23 @@
 from fastapi import  Request, status, HTTPException, Depends, APIRouter
 from fastapi import BackgroundTasks
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
+from authlib.integrations.starlette_client import OAuth
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 from sqlalchemy.orm import Session
 from loguru import logger
+from google.oauth2 import id_token
+from google.auth.transport import requests
 
 from app import database, utils, schemas, models, oauth2
 from app.config import settings
 limiter = Limiter(key_func=get_remote_address)
 
+#import required for login via google
+oauth = OAuth()
 
 router = APIRouter(prefix= "/api/dev/v1/user",
                    tags= ["Registration and Authentication"]
@@ -27,9 +33,22 @@ router = APIRouter(prefix= "/api/dev/v1/user",
 async def create_user(request: Request,user: schemas.UserCreate, background_tasks: BackgroundTasks,db: Session = Depends(database.get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
 
+
+
     if db_user:
-        logger.info(f"Falied to register user, user already registered: {user.email}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+        if db_user.provider == 'google':
+            logger.warning(f"Email already registered via Google. {db_user.id}")
+            raise HTTPException(status_code= status.HTTP_409_CONFLICT, detail= "Email Registered via Google, plesae login via Google.")
+        
+        elif db_user.provider == 'apple':
+            logger.warning(f"Email already registered via Apple. {db_user.id}")
+            raise HTTPException(status_code= status.HTTP_409_CONFLICT, detail= "Email Registered via Apple, plesae login via Apple.")
+
+        else:
+            logger.info(f"Falied to register user, user already registered: {user.email}")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
+
+
 
     hash_password = utils.hash(user.password)
     user.password = hash_password
@@ -89,7 +108,15 @@ def verify_user(otp_validation: schemas.OTPValidation, db: Session = Depends(dat
 @limiter.limit(settings.short_limit)
 def forgot_password_otp(request: Request,password_reset_request: schemas.PasswordResetRequest, background_tasks: BackgroundTasks, db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(models.User.email == password_reset_request.email).first()
+
+    if user.provider == 'google':
+        logger.warning(f"Email registered via Google, cannot reset password. {user.id}")
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail= "Email Registered via Google, cannot reset password.")
     
+    if user.provider == 'apple':
+        logger.warning(f"Email registered via Apple, cannot reset password. {user.id}")
+        raise HTTPException(status_code= status.HTTP_403_FORBIDDEN, detail= "Email Registered via Google, cannot reset password.")
+
     if not user:
         logger.warning(f"Falied to request reset password OTP, user not found: {password_reset_request.email}")
         raise HTTPException(status_code=404, detail="User not found")
@@ -163,6 +190,13 @@ def login_user(request: Request, user_credentials: OAuth2PasswordRequestForm = D
         logger.warning(f"Falied login, user not verified: {user_credentials.username}")
         raise HTTPException(status_code= status.HTTP_401_UNAUTHORIZED , detail= "User not verified, please verify.")
 
+    if user.provider == 'google':
+        logger.warning(f"Email already registered via Google. {user_credentials.username}")
+        raise HTTPException(status_code= status.HTTP_409_CONFLICT, detail= "Email Registered via Google, plesae login via Google.")
+    
+    if user.provider == 'apple':
+        logger.warning(f"Email already registered via Apple. {user_credentials.username}")
+        raise HTTPException(status_code= status.HTTP_409_CONFLICT, detail= "Email Registered via Apple, plesae login via Apple.")
     
     if not utils.verify_password(user_credentials.password, user.password):
         logger.critical(f"Failed login attemp for user, incorrect password: {user_credentials.username}")
@@ -171,3 +205,45 @@ def login_user(request: Request, user_credentials: OAuth2PasswordRequestForm = D
     access_token = oauth2.create_access_token(data={"user_id":user.id})
     logger.info(f"Successful login for user: {user_credentials.username}")
     return {"access_token": access_token, "token_type": "bearer"}
+
+################################################### LOGIN WITH GOOGLE  ################################################################################
+
+@router.post("/verify-google-token")
+async def verify_google_token(token_data: schemas.GoogleToken, db: Session = Depends(database.get_db)):
+    user_info = await verify_token_and_extract_user_info(token_data.token)
+    
+    if user_info is None:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    
+    user_query = db.query(models.User).filter_by(email=user_info['email'])
+    user = user_query.first()
+
+    if user and user.provider != 'google':
+        user_query.update(provider='google', synchronize_session=False)
+        db.commit()
+        return {"access_token": access_token, "token_type": "bearer"}
+    
+    if not user:
+        user = models.User(
+            email=user_info['email'],
+            provider='google', 
+            provider_id=user_info['provider_id'], 
+            is_verified=True
+            )
+        db.add(user)
+        db.commit()
+
+    access_token = oauth2.create_access_token(data={"user_id": user.id})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+async def verify_token_and_extract_user_info(token: str):
+    try:
+        idinfo = id_token.verify_oauth2_token(token, requests.Request(), settings.google_client_id)
+        user_info = {
+            "email": idinfo['email'],
+            "provider_id": idinfo['sub']
+        }
+        return user_info
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid token")
