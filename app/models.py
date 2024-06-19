@@ -12,13 +12,16 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    password = Column(String, nullable=False, )
+    password = Column(String, nullable=True )
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    age = Column(Integer, nullable=False)
+    age = Column(Integer, nullable=True)
     phone_number = Column(String, nullable=True, unique=True)
     updated_at = Column(DateTime, default=datetime.utcnow(), onupdate=datetime.utcnow())
     is_verified = Column(Boolean, default=False, nullable= False)
     role = Column(String(50), default='user')
+    provider = Column(String(50), nullable=False, default='local')  # 'local', 'google', 'apple'
+    provider_id = Column(String(255), nullable=True)  # Unique ID from the provider
+
 
     otps = relationship('ResetPasswordOTP', back_populates= "user")
     liked_stories = relationship("LikedStory", back_populates="user")
