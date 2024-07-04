@@ -96,12 +96,24 @@ class UserStoryLike(BaseModel):
     story_id: int
     dir: int = Field(..., ge=-1, le=1)
     
-class UserLikedStoryOut(BaseModel):
+class UserHistoryOut(BaseModel):
     story_id: int
     title: str
     title_image_path: str
     likes: int
     is_liked: bool
+    
+    class Config:
+        orm_mode = True
+
+class UserLikedStory(BaseModel):
+    story_id: int
+    title: str
+    title_image_path: str
+    description: str
+    
+    class Config:
+        orm_mode = True
 
 class UserPageOut(BaseModel):
     story_id: int

@@ -6,14 +6,14 @@ from app import database, utils, schemas, models, oauth2
 
 
 
-router = APIRouter(prefix= "/api/dev/v1/story",
+router = APIRouter(prefix= "/api/dev/v1/like",
                    tags= ["Strory Like"]
                    )
 
 
 
-@router.post("/like", status_code=status.HTTP_201_CREATED)
-def like_story(like: schemas.UserStoryLike, db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user)):
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def like_story(like: schemas.UserStoryLike, db: Session = Depends(database.get_db), current_user: models.User = Depends(oauth2.get_current_user)):
 
     valid_story = db.query(models.Story).filter(models.Story.story_id == like.story_id).all()
     
@@ -27,6 +27,8 @@ def like_story(like: schemas.UserStoryLike, db: Session = Depends(database.get_d
         like_query.delete()
         db.commit()
         return {"detail": "Successffully deleted like."}
+    elif  found_like and like.dir == 1:
+        return {"detail": "Story already liked."}
     elif not found_like and like.dir == 1:
         new_like = models.LikedStory(user_id = current_user.id, story_id= like.story_id)
         db.add(new_like)
@@ -36,9 +38,10 @@ def like_story(like: schemas.UserStoryLike, db: Session = Depends(database.get_d
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail= "Please check story_id and like dir.")
 
 
-@router.get("/user_liked", response_model=List[schemas.UserLikedStoryOut])
-def get_liked_stories_by_user(db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0):
- 
+@router.get("/user", response_model=List[schemas.UserLikedStory])
+def get_liked_stories_by_user(db: Session = Depends(database.get_db), current_user: models.User = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0):
+    
+    print("i am here")
     liked_stories = (
         db.query(models.Story)
         .join(models.LikedStory, models.LikedStory.story_id == models.Story.story_id)
@@ -48,6 +51,7 @@ def get_liked_stories_by_user(db: Session = Depends(database.get_db), current_us
         .offset(skip)
         .all()
     )
+    print(liked_stories)
 
     result = [
         {
@@ -60,3 +64,4 @@ def get_liked_stories_by_user(db: Session = Depends(database.get_db), current_us
     ]
 
     return result
+
