@@ -13,9 +13,10 @@ router = APIRouter(prefix= "/api/dev/v1/user",
 
 
 
-@router.get("/history", response_model=List[schemas.UserLikedStoryOut])
-def get_user_read_history(db: Session = Depends(database.get_db), current_user: int = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0, search: str = ""):
-    # Ensure current_user is valid
+@router.get("/history", response_model=List[schemas.UserHistoryOut])
+def get_user_read_history(db: Session = Depends(database.get_db), current_user: models.User = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0, search: str = ""):
+    
+
     if not current_user:
         raise HTTPException(status_code=401, detail="User authentication required")
 
@@ -41,7 +42,7 @@ def get_user_read_history(db: Session = Depends(database.get_db), current_user: 
     )
 
     user_history = [
-        schemas.UserLikedStoryOut(
+        schemas.UserHistoryOut(
             story_id=story.story_id,
             title=story.title,
             title_image_path=story.title_image_path,
