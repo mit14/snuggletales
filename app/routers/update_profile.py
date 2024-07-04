@@ -21,3 +21,13 @@ def update_profile(data: schemas.ProfileUpdate, db: Session = Depends(database.g
     db.commit()
 
     return {"message": "Profile updated successfully"}
+
+
+@router.get("/", response_model=schemas.ProfileUpdate)
+def get_user_profile(db: Session = Depends(database.get_db), current_user: models.User = Depends(oauth2.get_current_user)):
+    user = db.query(models.User).filter(models.User.id == current_user.id).first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user

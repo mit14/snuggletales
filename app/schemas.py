@@ -128,6 +128,6 @@ class UserPageOut(BaseModel):
 
 class ProfileUpdate(BaseModel):
     email: Optional[str] = None
-    age: Optional[str] = None
+    age: Optional[int] = None
     phone_number: Optional[str] = None
     
