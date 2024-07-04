@@ -1,11 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-<<<<<<< HEAD
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-=======
-from starlette.middleware.sessions import SessionMiddleware  # Import the SessionMiddleware
->>>>>>> google-apple_login
+from starlette.middleware.sessions import SessionMiddleware  
 
 from .utils import limiter, setup_exception_handlers, setup_logger
 from .database import Base, engine
@@ -45,9 +42,5 @@ app.mount("/static", StaticFiles(directory="app/website"), name="static")
 @app.get("/")
 def root():
     logger.info("Root endpoint was accessed")
-<<<<<<< HEAD
     # Directly return the index.html file
     return FileResponse("app/website/index.html")
-=======
-    return {"message": "Hello World"}
->>>>>>> google-apple_login
